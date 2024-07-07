@@ -7,10 +7,34 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
+
+const (
+	static  = "static"
+	dynamic = "dynamic"
+	rainbow = "rainbow"
+)
+
+type Lighting struct {
+	ID   int
+	Name string
+}
+
+type DeviceSettings struct {
+	Brightness int
+	Delay      int
+	IsFinished bool
+	RGB        []int
+}
+
+type DataPage struct {
+	Settings      DeviceSettings
+	LightingModes []*Lighting
+}
 
 type Template struct {
 	Template *template.Template
@@ -20,18 +44,42 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 
+	data := newData()
 	e.Renderer = newTemplate()
 	e.GET("/", func(c echo.Context) error {
-		return c.Render(http.StatusOK, "index", nil)
-	})
-
-	e.GET("/init", func(c echo.Context) error {
-		return c.String(http.StatusOK, "GArri has big cock")
+		return c.Render(http.StatusOK, "index", data)
 	})
 
 	e.POST("/init", initDevice)
 
-	e.POST("/save", saveSettings)
+	e.POST("/save", func(c echo.Context) error {
+		brightness, err := strconv.Atoi(c.FormValue("brightness"))
+		delay, err := strconv.Atoi(c.FormValue("delay"))
+		isFinished := checkIsCheckboxChecked(c.FormValue("finished"))
+
+		RGB := parseColorRgb(c.FormValue("red"), c.FormValue("green"), c.FormValue("blue"))
+
+		fmt.Println("lighting", c.FormValue("lighting"))
+		fmt.Println("END ===============")
+
+		newSettings := newSettings(DeviceSettings{
+			Brightness: brightness,
+			IsFinished: isFinished,
+			Delay:      delay,
+			RGB:        RGB,
+		})
+
+		fmt.Println("parsed data is", newSettings)
+
+		// handle error
+		if err != nil {
+		}
+
+		data.Settings = newSettings
+		return c.Render(200, "form", data)
+	})
+
+	e.Static("/static", "static")
 
 	e.Logger.Fatal(e.Start(":50064"))
 }
@@ -63,14 +111,31 @@ func initDevice(c echo.Context) error {
 		uuid: uuid,
 	}
 	writeDeviceToFile(device, "./data/device.txt")
-	fmt.Println("printed body:", data)
 	return c.String(http.StatusOK, "data:\n"+"ip:"+ip+", uuid:"+uuid)
 }
 
-func saveSettings(c echo.Context) error {
-	body := c.Request().Body
-	fmt.Println(body)
-	return nil
+func newSettings(settings DeviceSettings) DeviceSettings {
+	return settings
+}
+
+func newData() DataPage {
+
+	// Const
+	LightingModes := []*Lighting{
+		{1, static},
+		{2, dynamic},
+		{3, rainbow},
+	}
+
+	return DataPage{
+		Settings: newSettings(DeviceSettings{
+			IsFinished: false,
+			Brightness: 10,
+			Delay:      0,
+			RGB:        []int{0, 0, 0},
+		}),
+		LightingModes: LightingModes,
+	}
 }
 
 type Device struct {
@@ -95,4 +160,28 @@ func writeToFile(data string, filename string) error {
 func writeDeviceToFile(device Device, filename string) error {
 	data := fmt.Sprintf("device: ip: %s, uuid: %s\n", device.ip, device.uuid)
 	return writeToFile(data, filename)
+}
+
+func checkIsCheckboxChecked(value interface{}) bool {
+	if value == nil {
+		return false
+	}
+	strValue, ok := value.(string)
+	if !ok {
+		return false
+	}
+	if strValue == "on" || strValue == "true" {
+		return true
+	}
+	return false
+}
+
+func parseColorRgb(r string, g string, b string) []int {
+	red, err := strconv.Atoi(r)
+	green, err := strconv.Atoi(g)
+	blue, err := strconv.Atoi(b)
+	if err != nil {
+	}
+
+	return []int{red, green, blue}
 }
