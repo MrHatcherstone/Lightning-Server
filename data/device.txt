@@ -22,3 +22,4 @@ device: ip: 192.168.10.28, uuid: C499AF67B4FC
 device: ip: 192.168.10.28, uuid: C499AF67B4FC
 device: ip: 192.168.10.28, uuid: C499AF67B4FC
 device: ip: 192.168.10.28, uuid: C499AF67B4FC
+device: ip: 123, uuid: 123
