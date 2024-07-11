@@ -1,49 +1,61 @@
 {{ block "index" . }}
 <!DOCTYPE html>
 <html lang="eng">
-    <head>
-        <title></title>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script src="https://unpkg.com/htmx.org/dist/htmx.js"></script>
-    </head>
-    <body>
-        <h1>Control panel</h1>
-        
-    </body>
+
+<head>
+    <title>Light server</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://unpkg.com/htmx.org/dist/htmx.js"></script>
+    <link rel="stylesheet" href="/static/index.css">
+</head>
+
+<body>
+    <h1>Control panel</h1>
+    <div id="form" class="main-page__form">
+        {{ template "form" . }}
+    </div>
+</body>
 </html>
 {{ end }}
 
 
 {{ block "form" . }}
-<form hx-post="/save">
+<form hx-targe="#form" hx-post="/api/v1/settings/save" class="form-settings">
     <!-- add range brightness -->
-    <label for="brightness">
-        <input type="range" id="brightness" name="brightness" min="0" max="100">
+    <label for="brightness" class="input-base">
+        <span>brightness</span>
+        <input type="range" id="brightness" name="brightness" min="0" max="100" value="{{ .Settings.Brightness }}">
     </label>
     <!-- range delay -->
-    <label for="delay">
-        <input type="range" id="delay" name="delay" min="0" max="100">
+    <label for="delay" class="input-base">
+        <span>delay</span>
+        <input type="range" id="delay" name="delay" min="0" max="100" value="{{ .Settings.Delay }}">
     </label>
     <!-- finished check box -->
     <label for="finished">
-        <input type="checkbox" id="finished" name="finished">
+        <span>finished</span>
+        <input type="checkbox" id="finished" name="finished" value="{{ .Settings.IsFinished }}">
     </label>
-    <!-- pretty 3 input for rgb red green blue -->  
+    <!-- pretty 3 input for rgb red green blue -->
     <label for="rgb">
-        <input type="number" id="red" name="red" min="0" max="255">
-        <input type="number" id="green" name="green" min="0" max="255">
-        <input type="number" id="blue" name="blue" min="0" max="255">
+        <span>rgb</span>
+        <div>
+            <input type="number" id="red" name="red" min="0" max="255" value="{{ index .Settings.RGB 0 }}">
+            <input type="number" id="green" name="green" min="0" max="255" value="{{ index .Settings.RGB 1 }}">
+            <input type="number" id="blue" name="blue" min="0" max="255" value="{{ index .Settings.RGB 2 }}">
+        </div>
     </label>
     <!-- select with lighting type -->
-    <label for="lighting">
+    <label for="lighting" class="input-base">
+        <span>lighting</span>
         <select id="lighting" name="lighting">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
+            {{ range .LightingModes }}
+                <option value="{{ .ID }}" > {{ .Name }} </option>
+            {{ end }}
         </select>
     </label>
-    <button type="submit" >
+    <button type="submit" class="button">
         submit
     </button>
 </form>
